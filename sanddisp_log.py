@@ -50,8 +50,8 @@ def stamp_iso():
 
 
 def clock_line():
-    """Compact for 16 cols: MM-DD HH:MM:SS"""
-    return datetime.now().strftime("%m-%d %H:%M:%S")
+    """Compact for 16 cols: DD-MM HH:MM:SS"""
+    return datetime.now().strftime("%d-%m %H:%M:%S")
 
 
 def is_usbish(name: str) -> bool:
@@ -118,9 +118,9 @@ def log_path_today():
 
 
 def log_event(port_name: str, msg):
-    """Timestamp first, then append. Sparse bell events → flush each line."""
     ts = stamp_iso()
-    line = f"{ts}\t{port_name}\t{msg.type}\t{msg}\n"
+    # one compact field instead of type + full str(msg)
+    line = f"{ts}\t{port_name}\t{fmt_msg(msg)}\n"
     path = log_path_today()
     with open(path, "a") as f:
         f.write(line)
