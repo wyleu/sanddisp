@@ -9,6 +9,8 @@ Bargraph: brief flash on note on/off
 
 import time
 import mido
+import signal
+
 from dot3k import backlight, lcd
 
 BASE_LED = 180
@@ -82,6 +84,23 @@ def fmt_msg(msg) -> str:
         return trunc(f"PC  {ch_s} p{msg.program}")
     return trunc(str(msg))
 
+def shutdown_display(message="Shutting down..."):
+    try:
+        flash_bar(False)
+    except Exception:
+        pass
+    try:
+        set_backlight(40, 0, 0)   # dim red while message shows
+        lcd.clear()
+        lcd.set_cursor_position(0, 1)
+        lcd.write(trunc(message).ljust(LCD_W))
+        backlight.update()
+        time.sleep(0.8)
+        lcd.clear()
+        set_backlight(0, 0, 0)
+    except Exception:
+        pass
+
 def main():
     lcd.clear()
     backlight.rgb(0, 0, 60)
@@ -90,21 +109,36 @@ def main():
     set_backlight(0, 0, 80)
 
     ports = open_usb_inputs()
+
     if not ports:
         show_port("No USB MIDI")
         show_msg("plug & restart")
+        stop = {"flag": False}
+        def request_stop(signum, frame):
+            stop["flag"] = True
+        signal.signal(signal.SIGTERM, request_stop)
+        signal.signal(signal.SIGINT, request_stop)
         try:
-            while True:
+            while not stop["flag"]:
                 time.sleep(1)
-        except KeyboardInterrupt:
-            pass
+        finally:
+            shutdown_display("Shutting down...")
         return
 
     show_port(ports[0].name)
     flash_until = 0.0
 
+    stop = {"flag": False}
+
+    def request_stop(signum, frame):
+        stop["flag"] = True
+
+    signal.signal(signal.SIGTERM, request_stop)
+    signal.signal(signal.SIGINT, request_stop)
+
+
     try:
-        while True:
+        while not stop["flag"]:
             now = time.time()
             for inport in ports:
                 for msg in inport.iter_pending():
@@ -142,14 +176,15 @@ def main():
             time.sleep(POLL_SEC)
     except KeyboardInterrupt:
         pass
+
     finally:
         print("Closing...")
-        flash_bar(False)
-        backlight.rgb(0, 0, 0)
-        lcd.clear()
+        shutdown_display("Shutting down...")
         for p in ports:
-            p.close()
-
+            try:
+                p.close()
+            except Exception:
+                pass
 
 if __name__ == "__main__":
     main()
