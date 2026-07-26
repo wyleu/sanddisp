@@ -1,0 +1,3 @@
+cd ~/Code/Sanddisp
+source venv/bin/activate
+pip install rpi_ws281x

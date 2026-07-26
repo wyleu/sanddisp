@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """
 sanddisp_usb.py — Dot3K USB-MIDI confirmation display
-Line 0: USB port name
-Line 2: last MIDI message
-RGB: stays red after note_on, green after note_off
-Bargraph: brief flash on note on/off
+
+Programme: sanddisp_usb
+...
+Structure
+  config / constants
+  helpers / hardware / midi / control / main()
 """
 
 import time
