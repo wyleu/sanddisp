@@ -104,6 +104,13 @@ class TestText(unittest.TestCase):
         self.assertEqual(st.headline_text(c), "CLK #12")
         self.assertEqual(st.extra_text(c, 536810912), "+10001")
 
+    def test_banner_text(self):
+        s = (12, 2, 536810912)
+        self.assertEqual(st.banner_text(s), "SX #12 c2")
+        self.assertEqual(st.banner_text(s, 536810912 - 3172), "SX #12 c2 +3172")
+        c = (12, 0, 536820913)
+        self.assertEqual(st.banner_text(c, 536810912), "CLK #12 +10001")
+
 
 if __name__ == "__main__":
     r = unittest.main(exit=False, verbosity=1).result

@@ -115,7 +115,6 @@ def shutdown_display(message="Shutting down..."):
 def main():
     lcd.clear()
     backlight.rgb(0, 0, 60)
-    show_port("No USB MIDI...")
     show_msg("")
     show_mid("")
     set_backlight(0, 0, 80)
@@ -123,7 +122,7 @@ def main():
     ports = open_usb_inputs()
 
     if not ports:
-        show_port("No USB MIDI")
+        show_mid("No USB MIDI")
         show_msg("plug & restart")
         stop = {"flag": False}
         def request_stop(signum, frame):
@@ -137,9 +136,8 @@ def main():
             shutdown_display("Shutting down...")
         return
 
-    show_port(ports[0].name)
     # sandswing stamp SysEx: seq, bell ch, ms since the last decoded stamp
-    from sanddisp_stamp import decode_mido, extra_text, headline_text, is_clock
+    from sanddisp_stamp import banner_text, decode_mido, is_clock
     last_stamp_t = None
     flash_until = 0.0
 
@@ -189,8 +187,7 @@ def main():
                             set_backlight(200, 120, 0)     # amber: stroke stamp
                         flash_bar(True)
                         flash_until = now + FLASH_SEC
-                        show_port(trunc(headline_text(stamp)))
-                        show_mid(trunc(extra_text(stamp, last_stamp_t)))
+                        show_mid(trunc(banner_text(stamp, last_stamp_t)))
                         last_stamp_t = stamp[2]
                     else:
                         show_msg(fmt_msg(msg))

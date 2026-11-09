@@ -142,3 +142,13 @@ def extra_text(stamp, prev_t=None, width=LCD_W):
         if len(s) <= width:
             return s
     return base[:width]
+
+def banner_text(stamp, prev_t=None, width=LCD_W):
+    """Middle-row SysEx line: "SX #12 c2 +3172" or "CLK #12 +10001"."""
+    head = headline_text(stamp)
+    extra = extra_text(stamp, prev_t, width=width)
+    if extra:
+        s = "%s %s" % (head, extra)
+    else:
+        s = head
+    return s[:width]
