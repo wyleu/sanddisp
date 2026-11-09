@@ -70,6 +70,9 @@ def show_port(name: str):
 def show_msg(text: str):
     lcd.set_cursor_position(0, 2)
     lcd.write(trunc(text).ljust(LCD_W))
+def show_mid(text: str):
+    lcd.set_cursor_position(0, 1)
+    lcd.write(trunc(text).ljust(LCD_W))
 
 def fmt_msg(msg) -> str:
     ch = getattr(msg, "channel", None)
@@ -114,6 +117,7 @@ def main():
     backlight.rgb(0, 0, 60)
     show_port("No USB MIDI...")
     show_msg("")
+    show_mid("")
     set_backlight(0, 0, 80)
 
     ports = open_usb_inputs()
@@ -135,7 +139,7 @@ def main():
 
     show_port(ports[0].name)
     # sandswing stamp SysEx: seq, bell ch, ms since the last decoded stamp
-    from sanddisp_stamp import decode_mido, detail_text, is_clock, kind_text
+    from sanddisp_stamp import decode_mido, extra_text, headline_text, is_clock
     last_stamp_t = None
     flash_until = 0.0
 
@@ -153,7 +157,6 @@ def main():
             now = time.time()
             for inport in ports:
                 for msg in inport.iter_pending():
-                    show_port(inport.name)
                     stamp = decode_mido(msg)
 
                     if msg.type == "note_on" and getattr(msg, "velocity", 0) > 0:
@@ -186,8 +189,8 @@ def main():
                             set_backlight(200, 120, 0)     # amber: stroke stamp
                         flash_bar(True)
                         flash_until = now + FLASH_SEC
-                        show_port(trunc(detail_text(stamp, last_stamp_t)))
-                        show_msg(trunc(kind_text(stamp)))
+                        show_port(trunc(headline_text(stamp)))
+                        show_mid(trunc(extra_text(stamp, last_stamp_t)))
                         last_stamp_t = stamp[2]
                     else:
                         show_msg(fmt_msg(msg))

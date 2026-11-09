@@ -125,3 +125,20 @@ def line_text(stamp, width=LCD_W):
     if is_clock(stamp):
         return ("%-4s#%d" % (KIND_CLOCK, stamp[0]))[:width]
     return ("%-4s#%d c%d" % (KIND_STROKE, stamp[0], stamp[1]))[:width]
+
+def headline_text(stamp, width=LCD_W):
+    """Top row: "SX #12" or "CLK #12"."""
+    return ("%s #%d" % (kind_text(stamp), stamp[0]))[:width]
+
+
+def extra_text(stamp, prev_t=None, width=LCD_W):
+    """Middle row: "c2 +3172" (stroke) or "+10001" (clock). First stamp has no delta."""
+    base = "" if is_clock(stamp) else ("c%d" % stamp[1])
+    d = delta_ms(stamp, prev_t)
+    if d is None:
+        return base[:width]
+    for tail in ("+%d" % d, "+%ds" % (d // MS_PER_S)):
+        s = ("%s %s" % (base, tail)).strip()
+        if len(s) <= width:
+            return s
+    return base[:width]

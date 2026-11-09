@@ -95,6 +95,15 @@ class TestText(unittest.TestCase):
                     for p in prevs:
                         self.assertLessEqual(len(st.detail_text(s, p)), st.LCD_W)
 
+    def test_headline_and_extra(self):
+        s = (12, 2, 536810912)
+        self.assertEqual(st.headline_text(s), "SX #12")
+        self.assertEqual(st.extra_text(s), "c2")
+        self.assertEqual(st.extra_text(s, 536810912 - 3172), "c2 +3172")
+        c = (12, 0, 536820913)
+        self.assertEqual(st.headline_text(c), "CLK #12")
+        self.assertEqual(st.extra_text(c, 536810912), "+10001")
+
 
 if __name__ == "__main__":
     r = unittest.main(exit=False, verbosity=1).result
