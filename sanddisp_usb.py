@@ -84,6 +84,12 @@ def fmt_msg(msg) -> str:
         return trunc(f"CC  {ch_s} cc{msg.control}={msg.value}")
     if msg.type == "program_change":
         return trunc(f"PC  {ch_s} p{msg.program}")
+    if msg.type == "sysex":
+        # sandswing stamp SysEx (layout in sanddisp_stamp.py)
+        from sanddisp_stamp import decode_mido, line_text
+        stamp = decode_mido(msg)
+        if stamp is not None:
+            return trunc(line_text(stamp))
     return trunc(str(msg))
 
 def shutdown_display(message="Shutting down..."):
@@ -128,6 +134,9 @@ def main():
         return
 
     show_port(ports[0].name)
+    # sandswing stamp SysEx: seq, bell ch, ms since the last decoded stamp
+    from sanddisp_stamp import decode_mido, detail_text, is_clock, kind_text
+    last_stamp_t = None
     flash_until = 0.0
 
     stop = {"flag": False}
@@ -145,6 +154,7 @@ def main():
             for inport in ports:
                 for msg in inport.iter_pending():
                     show_port(inport.name)
+                    stamp = decode_mido(msg)
 
                     if msg.type == "note_on" and getattr(msg, "velocity", 0) > 0:
                         set_backlight(200, 0, 0)       # red
@@ -168,6 +178,17 @@ def main():
                         flash_bar(True)
                         flash_until = now + FLASH_SEC
                         show_msg(fmt_msg(msg))
+                    elif stamp is not None:
+                        # port row holds the stamp detail until the next message
+                        if is_clock(stamp):
+                            set_backlight(0, 160, 160)     # cyan: clock stamp
+                        else:
+                            set_backlight(200, 120, 0)     # amber: stroke stamp
+                        flash_bar(True)
+                        flash_until = now + FLASH_SEC
+                        show_port(trunc(detail_text(stamp, last_stamp_t)))
+                        show_msg(trunc(kind_text(stamp)))
+                        last_stamp_t = stamp[2]
                     else:
                         show_msg(fmt_msg(msg))
 
