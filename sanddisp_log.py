@@ -214,8 +214,23 @@ def fmt_msg(msg) -> str:
     return trunc(str(msg))
 
 
+_last_stamp_t = None
+
+
 def apply_msg_ui(port_name, msg, now, flash_until):
-    show_device(port_name)
+    """Bottom row: ordinary MIDI. Middle row: stamp SysEx only (not the port name)."""
+    global _last_stamp_t
+    from sanddisp_stamp import banner_text, decode_mido, is_clock
+    stamp = decode_mido(msg)
+    if stamp is not None:
+        show_device(trunc(banner_text(stamp, _last_stamp_t)))
+        if is_clock(stamp):
+            set_backlight(0, 160, 160)
+        else:
+            set_backlight(200, 120, 0)
+        flash_bar(True)
+        _last_stamp_t = stamp[2]
+        return now + FLASH_SEC
     show_msg(fmt_msg(msg))
     if msg.type == "note_on" and getattr(msg, "velocity", 0) > 0:
         set_backlight(200, 0, 0)
@@ -313,7 +328,7 @@ def run_idle_no_ports(ports):
     No device at start: still run the loop so hotplug can attach later.
     ports is a shared list (mutated by sync_ports).
     """
-    show_device("No USB MIDI")
+    show_device("")
     show_msg("waiting...")
     stop = {"flag": False}
     install_stop_handlers(stop)
@@ -325,7 +340,7 @@ def run_idle_no_ports(ports):
             now = time.time()
             if now - last_hotplug >= HOTPLUG_SEC:
                 if sync_ports(ports) and ports:
-                    show_device(ports[-1].name)
+                    show_device("")
                     show_msg("")
                     # fall through to full loop in main via return
                     return "ports"
@@ -341,9 +356,9 @@ def run_idle_no_ports(ports):
 
 def run_main_loop(ports):
     if ports:
-        show_device(ports[-1].name)
+        show_device("")
     else:
-        show_device("No USB MIDI")
+        show_device("")
         show_msg("waiting...")
 
     flash_until = 0.0
@@ -360,9 +375,9 @@ def run_main_loop(ports):
             if now - last_hotplug >= HOTPLUG_SEC:
                 if sync_ports(ports):
                     if ports:
-                        show_device(ports[-1].name)
+                        show_device("")
                     else:
-                        show_device("No USB MIDI")
+                        show_device("")
                         show_msg("waiting...")
                 last_hotplug = now
 
@@ -386,7 +401,7 @@ def main():
     lcd.clear()
     set_backlight(0, 0, 80)
     show_clock()
-    show_device("No USB MIDI...")
+    show_device("")
     show_msg("")
 
     ports = open_usb_inputs()
